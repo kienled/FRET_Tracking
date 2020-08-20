@@ -49,7 +49,7 @@ fe=FRET;
 feu=FRET_Uncertainty;
 %Determine film properties
 o=optimoptions(@patternsearch,'AccelerateMesh',true,'UseCompletePoll',true,'UseCompleteSearch',false);
-[Results.Properties]=patternsearch(@(x)FEMultiASim(feu,fe,x(2),x(1),r0,10000),ParameterSpace(1,:,[],[],[],[],ParameterSpace(2,:),ParameterSpace(3,:),o);
+[Results.Properties]=patternsearch(@(x)FEMultiASim(feu,fe,x(1),x(2),r0,10000),ParameterSpace(1,:),[],[],[],[],ParameterSpace(2,:),ParameterSpace(3,:),o);
 %Determine abc
 [~,~,Results.abc]=FEMultiASim(feu,fe,Props(2),Props(1),r0,10000);
 for i=1:Bootstrap_Iterations
@@ -58,12 +58,12 @@ for i=1:Bootstrap_Iterations
     FE=fe(samples,:);
     FEu=feu(samples,:);
     %Determine properties
-    [Results.Prop_Samples(i,:)]=patternsearch(@(x)FEMultiASim(x(3)*FEu,FE,x(2),x(1),r0,1000),Props,[],[],[],[],ParameterSpace(2,:),ParameterSpace(3,:),o);
-    [~,~,Results.abc_Samples(i,:)]=FEMultiASim(AConc(3)*feu,fe,AConc(2),AConc(1),r0,10000);
+    [Results.Prop_Samples(i,:)]=patternsearch(@(x)FEMultiASim(FEu,FE,x(1),x(2),r0,1000),Props,[],[],[],[],ParameterSpace(2,:),ParameterSpace(3,:),o);
+    [~,~,Results.abc_Samples(i,:)]=FEMultiASim(feu,fe,AConc(2),AConc(1),r0,10000);
 end
 Results.Prop_Uncertainty=std(Results.Properties);
 Results.abc_Uncertainty=std(Results.abc);
-    function [loglf,FRET]=FEMultiASim(FEu,FE,T,Aconc,r0,ND)
+    function [loglf,FRET,x]=FEMultiASim(FEu,FE,T,Aconc,r0,ND)
         A=Aconc/r0^2;
         FEu=FEu(~isnan(FE));
         FE=FE(~isnan(FE));
@@ -103,5 +103,9 @@ Results.abc_Uncertainty=std(Results.abc);
             fe=1./(1+((x(1)+x(2).*(z/r0).^2)).^x(3));
             Val=c2.*exp(c1.*(2*fe.*FE-fe.^2));
         end
+        %uncomment the next 2 lines to show plot of the simulated and
+        %input FRET distribution
+        %evalin('caller','Danhist(fe,-1:.02:2,0);');hold on;Danhist(FRET+FEu(randi(length(FEu),size(FRET))).*randn(size(FRET)),-1:.02:2,0);hold off;
+        %shg;
     end
 end
