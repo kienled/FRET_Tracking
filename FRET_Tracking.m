@@ -1,4 +1,4 @@
-function Results=FRET_Tracking(FRET,FRET_Uncertainty,Thickness,CoefGuess,ExpGuess,Trajectory_Duration_Frames,h_params,...
+function Results=FRET_Tracking2(FRET,FRET_Uncertainty,Thickness,CoefGuess,ExpGuess,Trajectory_Duration_Frames,h_params,...
     Max_Consecutive_Failures,N_Samples,Success_per_Sample,CoefTol,ExpTol)
 
 %%%%%%%%%% INPUTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -13,10 +13,10 @@ function Results=FRET_Tracking(FRET,FRET_Uncertainty,Thickness,CoefGuess,ExpGues
 % Förster radius. The thickness is estimated by the function
 % FRET_Properties.
 % 
-% MSD_Coef_Guess: Starting guess for the anomalous diffusion coefficient in
+% CoefGuess: Starting guess for the anomalous diffusion coefficient in
 % units of R0^2/frame where R0 is the Förster radius.
 % 
-% MSD_Exp_Guess: Starting guess for the anomalous diffusion lag-time
+% ExpGuess: Starting guess for the anomalous diffusion lag-time
 % scaling exponent.
 % 
 % Trajectory_Duration_Frames: Minimum trajectory duration in units of
@@ -222,7 +222,7 @@ while 1
         n=0; %counter for number of successes
         i=0; %counter for number of consecutive failures
         ii=0;  %counter for number of samples
-        st=Gn; %tuning parameters. proposal, zn(t), samples from N(z(t),st)
+        st=single(sqrt(2*Gn)); %tuning parameters. proposal, zn(t), samples from N(z(t),st)
         p=0;
         init=1; %start with burn in phase (i.e. equilibration phase)
         P=0;
@@ -232,7 +232,7 @@ while 1
         w(w<fl)=fl+.0001;
         w(w>fh)=fh-.0001;
         z=Fempinv(fit,w);
-        w=w-FE;
+        w=w-FE(j,:);
         while ii<=NSamp-1
             %propose new z-position from random point in trajectory
             t=randi(DurationFrames);
@@ -330,8 +330,7 @@ c=arrayfun(@(G)sum(log(mvnpdf(Zs(:,2:end),zi,G*((1:DurationFrames-1).^(S(1))+((1
 MSD_Parameter_CRLB(1)=1./(-sum([-1,16,-30,16,-1].*c)./(12*(.01*S(1)).^2));
 c=arrayfun(@(H)sum(log(mvnpdf(Zs(:,2:end),Zs(:,1).*ones(1,14),.5*S(2)*((1:DurationFrames-1).^(H)+((1:DurationFrames-1)').^(H)-abs((1:DurationFrames-1)-(1:DurationFrames-1)').^(H)))),'all','omitnan'),S(1)*(.98:.01:1.02));
 MSD_Parameter_CRLB(2)=1./(-sum([-1,16,-30,16,-1].*c)./(12*(.01*S(2)).^2));
-S(2)=2*H;
-Results.MSD_Parameters=S;
+Results.MSD_Parameters=fliplr(S);
 Results.MSD_Parameter_CRLB=MSD_Parameter_CRLB;
 Results.Zm=Zm;
 Results.Zu=Zu;
